@@ -1,16 +1,46 @@
-# This is a sample Python script.
+from fastapi import FastAPI, Depends, Request
+from dotenv import load_dotenv
+import os
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+from sqlalchemy.exc import IntegrityError
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.deps import get_current_user
+from app.api.routes import index as app_routes
+from app.db.models.user import User
+from starlette.responses import JSONResponse
 
+load_dotenv()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+app = FastAPI(
+    title=os.getenv("APP_NAME", "DonateHub"),
+    version="1.0.0",
+    description="A multitenant donation platform API"
+)
 
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8000"
+]
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+@app.get("/")
+def root():
+    return {"message": "Welcome to the DonateHub API!"}
+
+@app.get('/me')
+def get_profile(user: User = Depends(get_current_user)):
+    return user
+
+app.include_router(app_routes.router, prefix="/api/v1")
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request:Request, exc: IntegrityError):
+
+    return JSONResponse(status_code=400, content={"detail": "Database integrity error. Possibly duplicate or invalid fields."})
