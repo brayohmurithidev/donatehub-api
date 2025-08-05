@@ -1,0 +1,36 @@
+name: Deploy to AZURE
+
+on:
+  push:
+    branches:
+      - deployment
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{secrets.AZURE_VM_IP}}
+          username: ${{secrets.AZURE_VM_USER}}
+          key: ${{secrets.GCP_SSH_KEY}}
+          script: |
+            cd /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api
+            git pull origin deployment
+            source /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api/venv/bin/activate
+            pip install -r requirements.txt
+            alembic upgrade head
+            sudo susyemctl restart donatehub-app.service

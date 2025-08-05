@@ -8,6 +8,7 @@ from app.api.routes import uploads
 from app.api.routes import stripe_webhook
 from app.api.routes import stripe_checkout
 from app.api.routes import stripe_session
+from app.api.routes import mpesa_integration
 
 router = APIRouter()
 
@@ -19,3 +20,4 @@ router.include_router(uploads.router, prefix="/uploads", tags=['Uploads'])
 router.include_router(stripe_checkout.router, prefix="/donations", tags=['Donations'])
 router.include_router(stripe_webhook.router, prefix="/stripe", tags=['Stripe'])
 router.include_router(stripe_session.router, prefix="/stripe", tags=['Stripe'])
+router.include_router(mpesa_integration.router, prefix="/mpesa", tags=['Mpesa'])

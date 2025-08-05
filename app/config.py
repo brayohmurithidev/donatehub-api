@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     stripe_secret_key: str
     stripe_publishable_key: str
     stripe_webhook_secret: str
+    MPESA_CONSUMER_KEY: str
+    MPESA_CONSUMER_SECRET: str
+    MPESA_SHORTCODE: str
+    MPESA_PASSKEY: str
+    ENCRYPTION_SECRET_KEY: str
 
     class Config:
         env_file = ".env"

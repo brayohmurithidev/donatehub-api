@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.auth import decode_access_token
+from app.db.models import Tenant, User
 from app.db.models.user import User
 
 from app.db.index import get_db
@@ -24,7 +25,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 # CHECK ROLES
-def require_tenant_admin(user:User = Depends(get_current_user)) -> User:
+def require_tenant_admin(user:User = Depends(get_current_user), db: Session = Depends(get_db)) -> tuple[
+    User, type[Tenant]]:
     if user.role != "tenant_admin":
         raise HTTPException(status_code=403, detail="Only tenant_admins can perform this action")
-    return user
+
+    tenant = db.query(Tenant).filter(Tenant.admin_id == user.id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="No tenant found for this tenant_admin")
+    return user, tenant

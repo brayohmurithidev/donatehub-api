@@ -1,7 +1,16 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
+
+from app.schemas.user import UserCreate
+
+
+class UserInTenant(BaseModel):
+    id: UUID
+    full_name: str
+    email: EmailStr
 
 
 class TenantCreate(BaseModel):
@@ -12,6 +21,8 @@ class TenantCreate(BaseModel):
     location: Optional[str] = None
     logo_url: Optional[str] = None
     is_Verified: Optional[bool] = False
+    website: Optional[str] = None
+    admin: UserCreate
 
 
 class TenantUpdate(BaseModel):
@@ -31,7 +42,10 @@ class TenantOut(BaseModel):
     email: Optional[str] = None
     location: Optional[str] = None
     logo_url: Optional[str] = None
+    campaignCount: Optional[int] = 0
+    website: Optional[str] = None
     is_Verified: bool
+    admin: Optional[UserInTenant] = None
     created_at: datetime
     updated_at: Optional[datetime]
 

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import require_tenant_admin
 from app.db.index import get_db
 from app.db.models import Tenant, Campaign, Donation
+from app.lib.helper_fns import serialize_campaign
 from app.schemas.campaign import CampaignOut, CampaignCreate, CampaignUpdate, CampaignStats
 
 router = APIRouter()
@@ -36,13 +37,15 @@ def create_campaign(
     db.add(new_campaign)
     db.commit()
     db.refresh(new_campaign)
-    return new_campaign
+    return serialize_campaign(new_campaign, db)
+
 
 
 @router.get("/", response_model=list[CampaignOut])
 def list_campaigns(
-        db: Session = Depends(get_db),
-        active_only: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    active_only: Optional[bool] = None,
+    tenant_id: Optional[UUID] = None,  # 🔹 Accept tenant_id as a filter
 ):
     query = db.query(Campaign).options(joinedload(Campaign.tenant))
 
@@ -50,22 +53,15 @@ def list_campaigns(
         now = datetime.now()
         query = query.filter(Campaign.start_date <= now, Campaign.end_date >= now)
 
+    if tenant_id:
+        query = query.filter(Campaign.tenant_id == tenant_id)
+
     campaigns = query.order_by(Campaign.created_at.desc()).all()
 
     results = []
     for campaign in campaigns:
-        # Get computed values
-        percent = (campaign.current_amount / campaign.goal_amount) * 100 if campaign.goal_amount else 0
-        days = (campaign.end_date - datetime.now()).days if campaign.end_date else 0
-        donor_count = db.query(Donation.donor_email).filter(Donation.campaign_id == campaign.id).distinct().count()
 
-        # Serialize model
-        campaign_dict = campaign.__dict__.copy()
-        campaign_dict["percent_funded"] = round(percent, 2)
-        campaign_dict["days_left"] = days
-        campaign_dict["total_donors"] = donor_count
-
-        results.append(campaign_dict)
+        results.append(serialize_campaign(campaign, db))
 
     return results
 
@@ -82,42 +78,21 @@ def get_campaign(campaign_id: UUID, db: Session = Depends(get_db)):
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
-    # Calculate extra stats
-    percent = (campaign.current_amount / campaign.goal_amount) * 100 if campaign.goal_amount else 0
-    days = (campaign.end_date - datetime.now()).days if campaign.end_date else 0
-    donor_count = db.query(Donation.donor_email)\
-        .filter(Donation.campaign_id == campaign.id).distinct().count()
-
-    # Convert base fields
-    campaign_dict = campaign.__dict__.copy()
-
-    # Serialize tenant manually
-    campaign_dict["tenant"] = {
-        "id": campaign.tenant.id,
-        "name": campaign.tenant.name,
-        # "website": campaign.tenant.website,
-    } if campaign.tenant else None
-
-    # Add computed fields
-    campaign_dict["percent_funded"] = round(percent, 2)
-    campaign_dict["days_left"] = max(days, 0)
-    campaign_dict["total_donors"] = donor_count
-
-    return CampaignOut(**campaign_dict)
+    return serialize_campaign(campaign, db)
 
 @router.put("/{campaign_id}", response_model=CampaignOut)
 def update_campaign(
     campaign_id: UUID,
     update: CampaignUpdate,
     db: Session = Depends(get_db),
-    user = Depends(require_tenant_admin)
+    adminRes = Depends(require_tenant_admin)
 ):
+    print("update: ", update)
+    user,tenant = adminRes
     campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
-    # Ensure this campaign belongs to current tenant admin
-    tenant = db.query(Tenant).filter(Tenant.admin_id == user.id).first()
     if campaign.tenant_id != tenant.id:
         raise HTTPException(status_code=403, detail="You can only edit your own campaign")
 
@@ -126,7 +101,7 @@ def update_campaign(
 
     db.commit()
     db.refresh(campaign)
-    return campaign
+    return serialize_campaign(campaign, db)
 
 
 # CAMPAIGN STATS

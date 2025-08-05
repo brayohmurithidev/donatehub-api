@@ -2,19 +2,22 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.index import get_db
 from app.db.models import Campaign
 from app.db.models.donation import Donation
-from app.schemas.donation import DonationOut, DonationCreate
+from app.schemas.donation import DonationOut, CreateDonation
+from app.services.payment_service import process_payment
 
 router = APIRouter()
 
+
+
 @router.post("/", response_model=DonationOut)
-def make_donation(donation_in: DonationCreate, db: Session = Depends(get_db)):
+async def make_donation(payload: CreateDonation, db: Session = Depends(get_db)):
     # 1. Ensure campaign exists
-    campaign = db.query(Campaign).filter(Campaign.id == donation_in.campaign_id).first()
+    campaign = db.query(Campaign).filter(Campaign.id == payload.campaign_id).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
 
@@ -25,21 +28,97 @@ def make_donation(donation_in: DonationCreate, db: Session = Depends(get_db)):
 
     # 3. Create donation
     donation = Donation(
-        amount=donation_in.amount,
-        donor_name=donation_in.donor_name,
-        donor_email=donation_in.donor_email,
-        message=donation_in.message,
-        campaign_id=donation_in.campaign_id,
+        tenant_id=payload.tenant_id,
+        campaign_id=payload.campaign_id,
+        amount=payload.amount,
+        donor_name=payload.donor_name,
+        donor_phone=payload.donor_phone,
+        donor_email=payload.donor_email,
+        message=payload.message,
+        method=payload.method,
+        is_anonymous=payload.is_anonymous,
     )
 
-    # 4. Update campaign amount
-    campaign.current_amount += donation.amount
+    # # 4. Update campaign amount - add after payment verification
+    # campaign.current_amount += donation.amount
 
     db.add(donation)
     db.commit()
     db.refresh(donation)
-
     return donation
+
+    # try:
+    #     result = await process_payment(donation, db)
+    #     return {"status": "initiated", "payment_data": result, "donation": donation}
+    # except Exception as e:
+    #     donation.status = "FAILED"
+    #     db.commit()
+    #     raise HTTPException(status_code=500, detail=f"Payment failed: {str(e)}")
+
+@router.get("/", response_model=list[DonationOut])
+def list_donations(
+    db: Session = Depends(get_db),
+    active_only: bool = False,
+    tenant_id: UUID | None = None,
+    campaign_id: UUID | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+):
+    query = db.query(Donation).options(joinedload(Donation.campaign))
+    if active_only:
+        now = datetime.now()
+        query = query.filter(Donation.donated_at >= now)
+    if tenant_id:
+        query = query.filter(Donation.tenant_id == tenant_id)
+    if campaign_id:
+        query = query.filter(Donation.campaign_id == campaign_id)
+    if start_date:
+        query = query.filter(Donation.donated_at >= start_date)
+    if end_date:
+        query = query.filter(Donation.donated_at <= end_date)
+
+    donations = query.order_by(Donation.donated_at.desc()).all()
+
+    return donations
+
+
+
+
+@router.post("/pay/{donation_id}")
+async def pay_donation(donation_id: UUID, db: Session = Depends(get_db)):
+    donation = db.query(Donation).filter(Donation.id == donation_id).first()
+    if not donation:
+        raise HTTPException(status_code=404, detail="Donation not found")
+    if donation.status == "PAID":
+        raise HTTPException(status_code=400, detail="Donation already paid")
+    if donation.method != "MPESA":
+        raise HTTPException(status_code=400, detail="Donation method not supported")
+    if donation.amount <= 0:
+        raise HTTPException(status_code=400, detail="Donation amount must be greater than 0")
+    if donation.tenant_id is None:
+        raise HTTPException(status_code=400, detail="Tenant ID is required")
+    integrations = donation.tenant.mpesa_integrations
+    active_integration = next((integration for integration in integrations if integration.is_active), None)
+    if active_integration is None:
+        raise HTTPException(status_code=400, detail="No active MPESA integration found")
+    try:
+        result = await process_payment(donation, db)
+        return {"status": "initiated", "payment_data": result, "donation_id": donation.id}
+    except Exception as e:
+        donation.status = "FAILED"
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Payment failed: {str(e)}")
+
+
+@router.get("/pay/{donation_id}/status")
+def get_payment_status(donation_id: UUID, db: Session = Depends(get_db)):
+    donation = db.query(Donation).filter(Donation.id == donation_id).first()
+    if not donation:
+        raise HTTPException(status_code=404, detail="Donation not found")
+    return {
+        "status": donation.status,
+        "transaction_code": donation.transaction_id
+    }
 
 
 

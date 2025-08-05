@@ -4,8 +4,8 @@ from sqlalchemy import Column, String, Text, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql.base import UUID
 from sqlalchemy.orm import relationship
 
-from app.db.models.base import TimestampMixin
 from app.db.index import Base
+from app.db.models.base import TimestampMixin
 
 
 class Tenant(Base, TimestampMixin):
@@ -19,7 +19,11 @@ class Tenant(Base, TimestampMixin):
     email = Column(String, nullable=True)
     location = Column(String, nullable=True)
     is_Verified = Column(Boolean, default=False)
+    website = Column(String, nullable=True, unique=True)
 
     # Link to the admin user
-    admin_id = Column(UUID(as_uuid=True),ForeignKey("users.id"), nullable=True)
+    admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     admin = relationship("User", backref="tenants")
+
+    # Link to MPESA integrations
+    mpesa_integrations = relationship("MPESAIntegration", back_populates="tenant", cascade="all, delete-orphan")

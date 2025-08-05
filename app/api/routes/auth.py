@@ -1,16 +1,15 @@
-
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.auth import create_access_token
 from app.core.security import hash_password, verify_password
-from app.db.models.user import User
 from app.db.index import get_db
+from app.db.models.user import User
 from app.schemas.user import UserOut, UserCreate
 
 router = APIRouter()
+
 
 @router.post('/register', response_model=UserOut)
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -18,24 +17,28 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail='Email already registered')
+    try:
+        # hash pwd
+        hashed_pwd = hash_password(user.password)
 
-    # hash pwd
-    hashed_pwd = hash_password(user.password)
+        print("hashed pwd: ", hashed_pwd)
 
-    # Create a user instance
-    new_user = User(
-        full_name=user.full_name,
-        email = user.email,
-        password=hashed_pwd,
-        role=user.role
-    )
+        # Create a user instance
+        new_user = User(
+            full_name=user.full_name,
+            email=user.email,
+            password=hashed_pwd,
+            role=user.role
+        )
 
-    # Save to DB
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+        # Save to DB
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    return new_user
+        return new_user
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post('/login')
