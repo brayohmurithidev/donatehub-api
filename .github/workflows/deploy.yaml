@@ -21,25 +21,6 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Write .env file
-        run: |
-          echo "SECRET_KEY=${{secrets.SECRET_KEY}}" >> .env
-          echo "ENCRYPTION_SECRET_KEY=${{secrets.ENCRYPTION_SECRET_KEY}}" >> .env
-          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}" >> .env
-          echo "DATABASE_URL=${{secrets.DATABASE_URL}}" >> .env
-          echo "ALGORITHM=${{secrets.ALGORITHM}}" >> .env
-          echo "REFRESH_TOKEN_EXPIRE_MINUTES=${{secrets.REFRESH_TOKEN_EXPIRE_MINUTES}}" >> .env
-          echo "CLOUDINARY_CLOUD_NAME=${{secrets.CLOUDINARY_CLOUD_NAME}}" >> .env
-          echo "CLOUDINARY_API_KEY=${{secrets.CLOUDINARY_API_KEY}}" >> .env
-          echo "CLOUDINARY_API_SECRET=${{secrets.CLOUDINARY_API_SECRET}}" >> .env
-          echo "STRIPE_SECRET_KEY=${{secrets.STRIPE_SECRET_KEY}}" >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=${{secrets.STRIPE_PUBLISHABLE_KEY}}" >> .env
-          echo "STRIPE_WEBHOOK_SECRET=${{secrets.STRIPE_WEBHOOK_SECRET}}" >> .env
-          echo "MPESA_CONSUMER_KEY=${{secrets.MPESA_CONSUMER_KEY}}" >> .env
-          echo "MPESA_CONSUMER_SECRET=${{secrets.MPESA_CONSUMER_SECRET}}" >> .env
-          echo "MPESA_PASSKEY=${{secrets.MPESA_PASSKEY}}" >> .env
-          echo "MPESA_SHORTCODE=${{secrets.MPESA_SHORTCODE}}" >> .env
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -47,9 +28,28 @@ jobs:
           username: ${{secrets.AZURE_VM_USER}}
           key: ${{secrets.AZURE_SSH_KEY}}
           script: |
+            # Write .env file remotely
+            cat <<EOF > /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api/.env
+            SECRET_KEY=${{secrets.SECRET_KEY}}
+            ENCRYPTION_SECRET_KEY=${{secrets.ENCRYPTION_SECRET_KEY}}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+            DATABASE_URL=${{secrets.DATABASE_URL}}
+            ALGORITHM=${{secrets.ALGORITHM}}
+            REFRESH_TOKEN_EXPIRE_MINUTES=${{secrets.REFRESH_TOKEN_EXPIRE_MINUTES}}
+            CLOUDINARY_CLOUD_NAME=${{secrets.CLOUDINARY_CLOUD_NAME}}
+            CLOUDINARY_API_KEY=${{secrets.CLOUDINARY_API_KEY}}
+            CLOUDINARY_API_SECRET=${{secrets.CLOUDINARY_API_SECRET}}
+            STRIPE_SECRET_KEY=${{secrets.STRIPE_SECRET_KEY}}
+            STRIPE_PUBLISHABLE_KEY=${{secrets.STRIPE_PUBLISHABLE_KEY}}
+            STRIPE_WEBHOOK_SECRET=${{secrets.STRIPE_WEBHOOK_SECRET}}
+            MPESA_CONSUMER_KEY=${{secrets.MPESA_CONSUMER_KEY}}
+            MPESA_CONSUMER_SECRET=${{secrets.MPESA_CONSUMER_SECRET}}
+            MPESA_PASSKEY=${{secrets.MPESA_PASSKEY}}
+            MPESA_SHORTCODE=${{secrets.MPESA_SHORTCODE}}
+            EOF
             cd /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api
             git pull origin deployment
             source /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api/venv/bin/activate
             pip install -r requirements.txt
             alembic upgrade head
-            sudo susyemctl restart donatehub-app.service
+            sudo systemctl restart donatehub-app.service
