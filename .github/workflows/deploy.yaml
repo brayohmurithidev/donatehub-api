@@ -28,18 +28,17 @@ jobs:
           echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}" >> .env
           echo "DATABASE_URL=${{secrets.DATABASE_URL}}" >> .env
           echo "ALGORITHM=${{secrets.ALGORITHM}}" >> .env
-          echo "REFRESH_TOKEN_EXPIRE_MINUTES=${{secrets.REFRESH_TOKEN_EXPIRE_MINUTES}} >> .env
-          echo "CLOUDINARY_CLOUD_NAME=${{secrets.CLOUDINARY_CLOUD_NAME}} >> .env
-          echo "CLOUDINARY_API_KEY=${{secrets.CLOUDINARY_API_KEY}} >> .env
-          echo "CLOUDINARY_API_SECRET=${{secrets.CLOUDINARY_API_SECRET}} >> .env
-          echo "STRIPE_SECRET_KEY=${{secrets.STRIPE_SECRET_KEY}} >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=${{secrets.STRIPE_PUBLISHABLE_KEY}} >> .env
-          echo "STRIPE_WEBHOOK_SECRET=${{secrets.STRIPE_WEBHOOK_SECRET}} >> .env
-          echo "MPESA_CONSUMER_KEY=${{secrets.MPESA_CONSUMER_KEY}} >> .env
-          echo "MPESA_CONSUMER_SECRET=${{secrets.MPESA_CONSUMER_SECRET}} >> .env
-          echo "MPESA_PASSKEY=${{secrets.MPESA_PASSKEY}} >> .env
-          echo "MPESA_SHORTCODE=${{secrets.MPESA_SHORTCODE}} >> .env
-
+          echo "REFRESH_TOKEN_EXPIRE_MINUTES=${{secrets.REFRESH_TOKEN_EXPIRE_MINUTES}}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{secrets.CLOUDINARY_CLOUD_NAME}}" >> .env
+          echo "CLOUDINARY_API_KEY=${{secrets.CLOUDINARY_API_KEY}}" >> .env
+          echo "CLOUDINARY_API_SECRET=${{secrets.CLOUDINARY_API_SECRET}}" >> .env
+          echo "STRIPE_SECRET_KEY=${{secrets.STRIPE_SECRET_KEY}}" >> .env
+          echo "STRIPE_PUBLISHABLE_KEY=${{secrets.STRIPE_PUBLISHABLE_KEY}}" >> .env
+          echo "STRIPE_WEBHOOK_SECRET=${{secrets.STRIPE_WEBHOOK_SECRET}}" >> .env
+          echo "MPESA_CONSUMER_KEY=${{secrets.MPESA_CONSUMER_KEY}}" >> .env
+          echo "MPESA_CONSUMER_SECRET=${{secrets.MPESA_CONSUMER_SECRET}}" >> .env
+          echo "MPESA_PASSKEY=${{secrets.MPESA_PASSKEY}}" >> .env
+          echo "MPESA_SHORTCODE=${{secrets.MPESA_SHORTCODE}}" >> .env
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
