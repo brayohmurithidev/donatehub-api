@@ -1,36 +1,60 @@
+import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import require_tenant_admin
 from app.db.index import get_db
-from app.db.models import Tenant, Campaign, Donation
+from app.db.models import Campaign
 from app.lib.helper_fns import serialize_campaign
-from app.schemas.campaign import CampaignOut, CampaignCreate, CampaignUpdate, CampaignStats
+from app.lib.upload import upload_image
+from app.schemas.campaign import CampaignOut, CampaignUpdate, CampaignStats, CampaignStatus
 
 router = APIRouter()
 
+
 @router.post('/', response_model=CampaignOut)
 def create_campaign(
-        campaign_in: CampaignCreate,
+        title: str = Form(...),
+        description: str = Form(...),
+        status: Optional[CampaignStatus] = Form(CampaignStatus.active),
+        goal_amount: Decimal = Form(...),
+        start_date: datetime = Form(...),
+        end_date: Optional[datetime] = Form(None),
+        image: UploadFile = File(...),
         db: Session = Depends(get_db),
-        user = Depends(require_tenant_admin)
-    ):
+        auth=Depends(require_tenant_admin)
+):
+    if image is None:
+        raise HTTPException(status_code=400, detail="Campaign Image file is required")
+
     # get tenant of this user
-    tenant = db.query(Tenant).filter(Tenant.admin_id == user.id).first()
+    user, tenant = auth
     if not tenant:
         raise HTTPException(status_code=404, detail="No tenant found for this user")
 
+    # CHECK IF CAMPAIGN TITLE EXISTS
+    existingCampaign = db.query(Campaign).filter(Campaign.title == title).first()
+    if existingCampaign:
+        raise HTTPException(status_code=400, detail="Campaign with this title already exists")
+
+    campaign_id = uuid.uuid4()
+
+    image_url = upload_image(image, "campaigns", public_id=campaign_id)
+
     new_campaign = Campaign(
-        title=campaign_in.title,
-        description=campaign_in.description,
-        goal_amount=campaign_in.goal_amount,
-        start_date=campaign_in.start_date,
-        end_date=campaign_in.end_date,
-        image_url=campaign_in.image_url,
+        id=campaign_id,
+        title=title,
+        description=description,
+        goal_amount=goal_amount,
+        start_date=start_date,
+        status=status,
+        end_date=end_date,
+        image_url=image_url,
         tenant_id=tenant.id
     )
 
@@ -40,12 +64,11 @@ def create_campaign(
     return serialize_campaign(new_campaign, db)
 
 
-
 @router.get("/", response_model=list[CampaignOut])
 def list_campaigns(
-    db: Session = Depends(get_db),
-    active_only: Optional[bool] = None,
-    tenant_id: Optional[UUID] = None,  # 🔹 Accept tenant_id as a filter
+        db: Session = Depends(get_db),
+        active_only: Optional[bool] = None,
+        tenant_id: Optional[UUID] = None,  # 🔹 Accept tenant_id as a filter
 ):
     query = db.query(Campaign).options(joinedload(Campaign.tenant))
 
@@ -60,7 +83,6 @@ def list_campaigns(
 
     results = []
     for campaign in campaigns:
-
         results.append(serialize_campaign(campaign, db))
 
     return results
@@ -80,15 +102,16 @@ def get_campaign(campaign_id: UUID, db: Session = Depends(get_db)):
 
     return serialize_campaign(campaign, db)
 
+
 @router.put("/{campaign_id}", response_model=CampaignOut)
 def update_campaign(
-    campaign_id: UUID,
-    update: CampaignUpdate,
-    db: Session = Depends(get_db),
-    adminRes = Depends(require_tenant_admin)
+        campaign_id: UUID,
+        update: CampaignUpdate,
+        db: Session = Depends(get_db),
+        adminRes=Depends(require_tenant_admin)
 ):
     print("update: ", update)
-    user,tenant = adminRes
+    user, tenant = adminRes
     campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
@@ -114,8 +137,8 @@ def get_campaign_stats(campaign_id: UUID, db: Session = Depends(get_db)):
     goal = float(campaign.goal_amount)
     raised = float(campaign.current_amount)
 
-    #avoid divide by zero
-    percent_funded = (raised/ goal )* 100 if goal > 0 else 0.0
+    # avoid divide by zero
+    percent_funded = (raised / goal) * 100 if goal > 0 else 0.0
     amount_remaining = campaign.goal_amount - campaign.current_amount
 
     # Days left
@@ -129,7 +152,7 @@ def get_campaign_stats(campaign_id: UUID, db: Session = Depends(get_db)):
         is_active = True
 
     return CampaignStats(
-        percent_funded=round(percent_funded,2),
+        percent_funded=round(percent_funded, 2),
         amount_remaining=amount_remaining,
         days_left=days_left,
         is_active=is_active

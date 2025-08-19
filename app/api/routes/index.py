@@ -1,14 +1,15 @@
 from fastapi import APIRouter
 
 from app.api.routes import auth
-from app.api.routes import tenant
 from app.api.routes import campaign
 from app.api.routes import donation
-from app.api.routes import uploads
-from app.api.routes import stripe_webhook
+from app.api.routes import mpesa_integration
+from app.api.routes import stats
 from app.api.routes import stripe_checkout
 from app.api.routes import stripe_session
-from app.api.routes import mpesa_integration
+from app.api.routes import stripe_webhook
+from app.api.routes import tenant
+from app.api.routes import uploads
 
 router = APIRouter()
 
@@ -21,3 +22,4 @@ router.include_router(stripe_checkout.router, prefix="/donations", tags=['Donati
 router.include_router(stripe_webhook.router, prefix="/stripe", tags=['Stripe'])
 router.include_router(stripe_session.router, prefix="/stripe", tags=['Stripe'])
 router.include_router(mpesa_integration.router, prefix="/mpesa", tags=['Mpesa'])
+router.include_router(stats.router, prefix="/stats", tags=['Stats'])

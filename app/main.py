@@ -15,7 +15,10 @@ load_dotenv()
 app = FastAPI(
     title=os.getenv("APP_NAME", "DonateHub"),
     version="1.0.0",
-    description="A multitenant donation platform API"
+    description="A multitenant donation platform API",
+    swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1
+    },
 )
 
 origins = [
