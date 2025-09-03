@@ -1,8 +1,9 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, HttpUrl
 
 from app.schemas.user import UserCreate
 
@@ -48,6 +49,25 @@ class TenantOut(BaseModel):
     admin: Optional[UserInTenant] = None
     created_at: datetime
     updated_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class TenantListOut(BaseModel):
+    id: UUID
+    name: str
+    logo_url: Optional[HttpUrl] = None
+    description: Optional[str] = None
+    shortDescription: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    website: Optional[HttpUrl] = None
+    location: Optional[str] = None
+    totalCampaigns: int
+    totalRaised: Decimal
+    isVerified: bool
+    dateJoined: datetime
 
     class Config:
         from_attributes = True

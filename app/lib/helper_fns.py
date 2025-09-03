@@ -6,7 +6,7 @@ from app.db.models import Campaign, Donation
 from app.schemas.campaign import CampaignOut, TenantInCampaign
 
 
-def serialize_campaign(campaign: Campaign, db:Session) -> CampaignOut:
+def serialize_campaign(campaign: Campaign, db: Session) -> CampaignOut:
     unique_donor_count = db.query(Donation.donor_email) \
         .filter(Donation.campaign_id == campaign.id) \
         .distinct() \
@@ -20,6 +20,7 @@ def serialize_campaign(campaign: Campaign, db:Session) -> CampaignOut:
         current_amount=campaign.current_amount,
         start_date=campaign.start_date,
         end_date=campaign.end_date,
+        image_url=campaign.image_url,
         tenant_id=campaign.tenant_id,
         percent_funded=float((campaign.current_amount / campaign.goal_amount) * 100 if campaign.goal_amount else 0),
         days_left=max((campaign.end_date - datetime.now()).days if campaign.end_date else 0, 0),

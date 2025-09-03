@@ -6,18 +6,19 @@ from uuid import UUID
 
 from pydantic import BaseModel, HttpUrl
 
+
 class CampaignStatus(str, Enum):
     active = "active"
     completed = "completed"
     cancelled = "cancelled"
 
+
 # Tenant in a campaign
 class TenantInCampaign(BaseModel):
     id: UUID
     name: str
-    website: Optional[HttpUrl]  =None
+    website: Optional[HttpUrl] = None
     logo_url: Optional[HttpUrl] = None
-
 
 
 class CampaignCreate(BaseModel):
@@ -55,13 +56,12 @@ class CampaignOut(BaseModel):
     updated_at: Optional[datetime]
     tenant: Optional[TenantInCampaign]
 
-    percent_funded: float
-    days_left: int
-    total_donors: int
+    percent_funded: Optional[float] = 0
+    days_left: Optional[int] = 0
+    total_donors: Optional[int] = 0
 
     class Config:
         from_attributes = True
-
 
 
 # stats

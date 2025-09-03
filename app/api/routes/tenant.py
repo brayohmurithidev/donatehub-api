@@ -1,14 +1,17 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_tenant_admin
 from app.core.security import hash_password
 from app.db.index import get_db
-from app.db.models import User
+from app.db.models import User, Campaign
+from app.db.models.campaign import CampaignStatus
 from app.db.models.tenant import Tenant
-from app.schemas.tenant import TenantOut, TenantCreate, TenantUpdate
+from app.schemas.campaign import CampaignOut
+from app.schemas.tenant import TenantOut, TenantCreate, TenantUpdate, TenantListOut
 
 router = APIRouter()
 
@@ -78,15 +81,71 @@ def get_tenant(tenant_id: str, db: Session = Depends(get_db)):
     return tenant
 
 
-@router.get("/", response_model=List[TenantOut])
+@router.get("/{tenant_id}/campaigns", response_model=List[CampaignOut])
+def get_tenant_campaigns(tenant_id: str, db: Session = Depends(get_db)):
+    tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    tenant_campaigns = db.query(Campaign).filter(
+        and_(
+            Campaign.tenant_id == tenant_id,
+            Campaign.status == CampaignStatus.active
+        )
+    ).all()
+    return tenant_campaigns
+
+
+@router.get("/", response_model=List[TenantListOut])
 def list_tenants(
-        verified: Optional[bool] = Query(None, description="Filter by verified status"),
         db: Session = Depends(get_db),
+        verified: Optional[bool] = Query(None, description="Filter by verified status"),
+        search: Optional[str] = Query(None, description="Search by tenant name"),
+        page: int = Query(1, ge=1, description="Page number"),
+        page_size: int = Query(10, ge=1, le=100, description="Page size"),
 ):
-    query = db.query(Tenant)
-    if verified is not None:
+    query = (
+        db.query(
+            Tenant,
+            func.count(Campaign.id).label("totalCampaigns"),
+            func.coalesce(func.sum(Campaign.current_amount), 0).label("totalRaised"),
+        )
+        .outerjoin(Campaign, Campaign.tenant_id == Tenant.id)
+        .group_by(Tenant.id)
+    )
+
+    # Default filter: only verified unless explicitly overridden
+    if verified is None:
+        query = query.filter(Tenant.is_Verified == True)
+    else:
         query = query.filter(Tenant.is_Verified == verified)
-    return query.all()
+
+    if search:
+        query = query.filter(Tenant.name.ilike(f"%{search}%"))
+
+    # Pagination
+    tenants = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    results = []
+    for tenant, total_campaigns, total_raised in tenants:
+        results.append(
+            TenantListOut(
+                id=tenant.id,
+                name=tenant.name,
+                logo_url=tenant.logo_url,
+                description=tenant.description,
+                shortDescription=tenant.description[:100] + "..." if tenant.description else None,
+                email=tenant.email,
+                phone=tenant.phone,
+                website=tenant.website,
+                location=tenant.location,
+                totalCampaigns=total_campaigns,
+                totalRaised=round(total_raised, 2),  # round to 2 decimal places
+                isVerified=tenant.is_Verified,
+                dateJoined=tenant.created_at,
+            )
+        )
+
+    return results
 
 
 # Update tenant details
