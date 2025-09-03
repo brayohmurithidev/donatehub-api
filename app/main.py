@@ -21,12 +21,13 @@ app = FastAPI(
     },
 )
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://localhost:5173",
-    "https://donatehub-tenant.vercel.app"
-]
+# origins = [
+#     "http://localhost:3000",
+#     "http://localhost:8000",
+#     "http://localhost:5173",
+#     "https://donatehub-tenant.vercel.app"
+# ]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
