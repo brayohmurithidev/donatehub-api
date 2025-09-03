@@ -26,6 +26,10 @@ origins = [
     "http://localhost:8000",
     "http://localhost:5173",
     "https://donatehub-tenant.vercel.app"
+    "https://staging.donatehub-tenant.fazilabs.com",
+    "https://donatehub-tenant.fazilabs.com"
+    "https://donatehub.fazilabs.com",
+    "https://staging.donatehub.fazilabs.com"
 ]
 
 app.add_middleware(

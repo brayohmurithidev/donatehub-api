@@ -48,7 +48,8 @@ jobs:
             MPESA_SHORTCODE=${{secrets.MPESA_SHORTCODE}}
             EOF
             cd /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api
-            git pull origin deployment
+            git fetch origin
+            git reset --hard origin/deployment
             source /home/${{secrets.AZURE_VM_USER}}/app/donatehub-api/venv/bin/activate
             pip install -r requirements.txt
             alembic upgrade head
