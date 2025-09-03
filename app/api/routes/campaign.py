@@ -67,7 +67,7 @@ def create_campaign(
 @router.get("/", response_model=list[CampaignOut])
 def list_campaigns(
         db: Session = Depends(get_db),
-        active_only: Optional[bool] = None,
+        active_only: Optional[bool] = True,
         tenant_id: Optional[UUID] = None,  # 🔹 Accept tenant_id as a filter
 ):
     query = db.query(Campaign).options(joinedload(Campaign.tenant))

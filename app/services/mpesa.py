@@ -44,7 +44,7 @@ async def initiate_stk_push(integration, donation: type[Donation], db: Session =
         "PartyB": integration.shortcode,
         "PhoneNumber": donation.donor_phone,
         "CallBackURL": integration.callback_url,
-        "AccountReference": str(donation.title),
+        "AccountReference": str(donation.campaign.title),
         "TransactionDesc": donation.message or "Donation"
     }
 
