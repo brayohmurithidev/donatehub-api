@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import require_tenant_admin
 from app.db.index import get_db
-from app.db.models import Campaign
+from app.features.campaign.models import Campaign
 from app.lib.helper_fns import serialize_campaign
 from app.lib.upload import upload_image
 from app.schemas.campaign import CampaignOut, CampaignUpdate, CampaignStats, CampaignStatus

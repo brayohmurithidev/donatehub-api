@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.index import get_db
-from app.db.models import Campaign
 from app.db.models.donation import Donation
+from app.features.campaign.models import Campaign
 from app.schemas.donation import DonationOut, CreateDonation
 from app.services.payment_service import process_payment
 

@@ -2,7 +2,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Campaign, Donation
+from app.db.models import Donation
+from app.features.campaign.models import Campaign
 from app.schemas.campaign import CampaignOut, TenantInCampaign
 
 

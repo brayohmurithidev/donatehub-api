@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_tenant_admin
 from app.core.security import hash_password
 from app.db.index import get_db
-from app.db.models import User, Campaign
-from app.db.models.campaign import CampaignStatus
+from app.db.models import User
 from app.db.models.tenant import Tenant
+from app.features.campaign.models import CampaignStatus, Campaign
 from app.schemas.campaign import CampaignOut
 from app.schemas.tenant import TenantOut, TenantCreate, TenantUpdate, TenantListOut
 

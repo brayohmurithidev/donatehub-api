@@ -28,3 +28,11 @@ def require_tenant_admin(user: User = Depends(get_current_user), db: Session = D
     if not tenant:
         raise HTTPException(status_code=404, detail="No tenant found for this tenant_admin")
     return user, tenant
+
+
+# REQUIRE PLATFORM ADMIN
+def require_platform_admin(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
+    if user.role != "platform_admin":
+        raise HTTPException(status_code=403, detail="Only platform_admins can perform this action")
+
+    return user

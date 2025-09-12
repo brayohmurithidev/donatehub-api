@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db.index import get_db
-from app.db.models import Campaign
+from app.features.campaign.models import Campaign
 from app.schemas.checkout import CheckoutRequest
 
 router = APIRouter()
 stripe.api_key = settings.stripe_secret_key
+
 
 @router.post("/checkout")
 def create_checkout_session(data: CheckoutRequest, db: Session = Depends(get_db)):
@@ -28,7 +29,7 @@ def create_checkout_session(data: CheckoutRequest, db: Session = Depends(get_db)
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
-                    'unit_amount': int(data.amount * 100), # in cents
+                    'unit_amount': int(data.amount * 100),  # in cents
                     'product_data': {
                         'name': f'Donation to: {campaign.title}'
                     },

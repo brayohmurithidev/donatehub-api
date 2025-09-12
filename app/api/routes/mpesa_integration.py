@@ -12,8 +12,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_tenant_admin
 from app.core.security import encrypt_secret, decrypt_secret
 from app.db.index import get_db
-from app.db.models import MPESAIntegration, Donation, Campaign
+from app.db.models import MPESAIntegration, Donation
 from app.db.models.donation import PaymentStatus
+from app.features.campaign.models import Campaign
 from app.schemas.mpesa_integration import MPESAIntegrationCreate, MPESAIntegrationOut, \
     MpesaIntegrationUpdate, MpesaIntegrationTestCreate
 from app.services.mpesa import get_access_token, get_url

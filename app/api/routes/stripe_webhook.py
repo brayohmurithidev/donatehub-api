@@ -1,5 +1,3 @@
-import decimal
-import uuid
 from datetime import datetime
 
 import stripe
@@ -8,13 +6,15 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db.index import get_db
-from app.db.models import Donation, Campaign
+from app.db.models import Donation
+from app.features.campaign.models import Campaign
 
 router = APIRouter()
 stripe.api_key = settings.stripe_secret_key
 
+
 @router.post("/webhook")
-async def stripe_webhook(request:Request, db: Session = Depends(get_db)):
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
 
@@ -32,12 +32,11 @@ async def stripe_webhook(request:Request, db: Session = Depends(get_db)):
 
         metadata = session1.get("metadata", {})
         campaign_id = metadata.get("campaign_id")
-        amount_total=session1.get("amount_total", 0)
+        amount_total = session1.get("amount_total", 0)
 
         donor_email = metadata.get("donor_email") or session1.get("customer_email")
         donor_name = metadata.get("donor_name") or session1.get("customer_details", {}).get("name")
         message = metadata.get("message", "")
-
 
         if not campaign_id:
             raise HTTPException(status_code=400, detail="Missing campaign_id in metadata")

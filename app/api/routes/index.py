@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes import adminRoutes
 from app.api.routes import auth
 from app.api.routes import campaign
 from app.api.routes import donation
@@ -23,3 +24,4 @@ router.include_router(stripe_webhook.router, prefix="/stripe", tags=['Stripe'])
 router.include_router(stripe_session.router, prefix="/stripe", tags=['Stripe'])
 router.include_router(mpesa_integration.router, prefix="/mpesa", tags=['Mpesa'])
 router.include_router(stats.router, prefix="/stats", tags=['Stats'])
+router.include_router(adminRoutes.router, prefix="/admin", tags=['Admin Routes'])

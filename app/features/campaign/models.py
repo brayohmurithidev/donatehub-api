@@ -1,12 +1,12 @@
 import uuid
-from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import UUID, Column, String, Text, Numeric, DateTime, ForeignKey, Enum as SQLAEnum
 from sqlalchemy.orm import relationship
 
-from app.db.models.base import TimestampMixin
 from app.db.index import Base
+from app.db.model_base import TimestampMixin
+
 
 class CampaignStatus(str, Enum):
     active = "active"
@@ -30,6 +30,3 @@ class Campaign(Base, TimestampMixin):
     # Join with tenant
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     tenant = relationship("Tenant", backref="campaigns")
-
-
-

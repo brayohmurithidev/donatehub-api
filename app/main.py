@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
+from app import routes as v2_routes
 from app.api.deps import get_current_user
 from app.api.routes import index as app_routes
 from app.db.models.user import User
@@ -23,6 +24,7 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:8000",
     "http://localhost:5173",
     "https://donatehub-tenant.vercel.app",
@@ -52,6 +54,7 @@ def get_profile(user: User = Depends(get_current_user)):
 
 
 app.include_router(app_routes.router, prefix="/api/v1")
+app.include_router(v2_routes.router, prefix="/api/v2")
 
 
 @app.exception_handler(IntegrityError)

@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_tenant_admin
 from app.db.index import get_db
-from app.db.models import Campaign, Donation
+from app.db.models import Donation
+from app.features.campaign.models import Campaign
 from app.schemas.donation import PaymentStatus
 
 router = APIRouter()
