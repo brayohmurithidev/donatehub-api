@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 from app import routes as v2_routes
 from app.api.deps import get_current_user
 from app.api.routes import index as app_routes
-from app.db.models.user import User
+from app.features.auth.models import User
 
 load_dotenv()
 

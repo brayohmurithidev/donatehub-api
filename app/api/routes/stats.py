@@ -18,7 +18,7 @@ def get_dashboard_stats(
 ):
     user, tenant = auth
     if not tenant:
-        raise HTTPException(status_code=404, detail="No tenant found for this user")
+        raise HTTPException(status_code=404, detail="No tenant found for this auth")
 
     # GET TOTAL CAMPAIGNS
     total_campaigns = db.query(func.count(Campaign.id)).filter(Campaign.tenant_id == tenant.id).scalar()

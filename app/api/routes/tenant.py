@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_tenant_admin
 from app.core.security import hash_password
 from app.db.index import get_db
-from app.db.models import User
-from app.db.models.tenant import Tenant
+from app.features.auth.models import User
 from app.features.campaign.models import CampaignStatus, Campaign
+from app.features.tenant.models import Tenant
 from app.schemas.campaign import CampaignOut
 from app.schemas.tenant import TenantOut, TenantCreate, TenantUpdate, TenantListOut
 
@@ -68,7 +68,7 @@ def get_my_tenant(
 ):
     user, tenant = adminResponse
     if not tenant:
-        raise HTTPException(status_code=404, detail="No tenant found for this user")
+        raise HTTPException(status_code=404, detail="No tenant found for this auth")
     return tenant
 
 
@@ -160,7 +160,7 @@ def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # Allow update only if current user is the tenant admin
+    # Allow update only if current auth is the tenant admin
     if tenant.admin_id != user.id:
         raise HTTPException(status_code=403, detail="You are not authorized to update this tenant")
 

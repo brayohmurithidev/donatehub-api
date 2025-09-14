@@ -129,7 +129,7 @@ async def test_mpesa_integration(
     if not payload.amount or not payload.phone:
         raise HTTPException(status_code=400, detail="Amount and phone number are required")
     if not tenant:
-        raise HTTPException(status_code=404, detail="No tenant found for this user")
+        raise HTTPException(status_code=404, detail="No tenant found for this auth")
     try:
         integration = db.query(MPESAIntegration).filter(MPESAIntegration.tenant_id == tenant.id).first()
 

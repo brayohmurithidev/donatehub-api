@@ -21,7 +21,7 @@ class Tenant(Base, TimestampMixin):
     is_Verified = Column(Boolean, default=False)
     website = Column(String, nullable=True, unique=True)
 
-    # Link to the admin user
+    # Link to the admin auth
     admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     admin = relationship("User", backref="tenants")
 

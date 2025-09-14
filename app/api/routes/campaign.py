@@ -32,10 +32,10 @@ def create_campaign(
     if image is None:
         raise HTTPException(status_code=400, detail="Campaign Image file is required")
 
-    # get tenant of this user
+    # get tenant of this auth
     user, tenant = auth
     if not tenant:
-        raise HTTPException(status_code=404, detail="No tenant found for this user")
+        raise HTTPException(status_code=404, detail="No tenant found for this auth")
 
     # CHECK IF CAMPAIGN TITLE EXISTS
     existingCampaign = db.query(Campaign).filter(Campaign.title == title).first()

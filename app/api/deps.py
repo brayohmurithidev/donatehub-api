@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import decode_access_token
 from app.db.index import get_db
-from app.db.models import Tenant
-from app.db.models.user import User
+from app.features.auth.models import User
+from app.features.tenant.models import Tenant
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -14,7 +14,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     payload = decode_access_token(token)
     user = db.query(User).filter(User.id == payload.get("sub")).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid user")
+        raise HTTPException(status_code=401, detail="Invalid auth")
     return user
 
 

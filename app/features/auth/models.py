@@ -1,16 +1,21 @@
 import enum
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+
 from sqlalchemy import Column, String, Enum, Boolean, DateTime
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.index import Base
-from app.db.models.base import TimestampMixin
+from app.db.model_base import TimestampMixin
+
+
+# from app.db.models.base import TimestampMixin
 
 
 class UserRole(str, enum.Enum):
     donor = "donor"
     tenant_admin = "tenant_admin"
     platform_admin = "platform_admin"
+
 
 class User(Base, TimestampMixin):
     __tablename__ = "users"

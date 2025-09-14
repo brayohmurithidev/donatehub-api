@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
+from fastapi import Form, UploadFile, File
 from pydantic import BaseModel, HttpUrl
 
 
@@ -22,13 +23,13 @@ class TenantInCampaign(BaseModel):
 
 
 class CampaignCreate(BaseModel):
-    title: str
-    description: str
-    status: Optional[CampaignStatus] = CampaignStatus.active
-    goal_amount: Decimal
-    start_date: datetime
-    end_date: Optional[datetime] = None
-    image_url: Optional[str] = None
+    title: str = Form(...)
+    description: str = Form(...)
+    status: Optional[CampaignStatus] = Form(CampaignStatus.active)
+    goal_amount: Decimal = Form(...)
+    start_date: datetime = Form(...)
+    end_date: Optional[datetime] = Form(None)
+    image: Optional[UploadFile] = File(None)
 
 
 class CampaignUpdate(BaseModel):

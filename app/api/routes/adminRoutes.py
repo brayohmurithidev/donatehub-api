@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_platform_admin
 from app.db.index import get_db
-from app.db.models import User, Tenant
+from app.features.auth.models import User
 from app.features.campaign.models import Campaign, CampaignStatus
+from app.features.tenant.models import Tenant
 from app.schemas.adminSchemas import TenantOut
 
 router = APIRouter()
