@@ -10,6 +10,7 @@ from app import routes as v2_routes
 from app.api.deps import get_current_user
 from app.api.routes import index as app_routes
 from app.features.auth.models import User
+from app.middlewares.logging_middleware import logging_middleware
 
 load_dotenv()
 
@@ -41,6 +42,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.middleware("http")(logging_middleware)
 
 
 @app.get("/")

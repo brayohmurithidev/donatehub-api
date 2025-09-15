@@ -5,8 +5,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, HttpUrl
 
+from app.features.auth.models import UserRole
 
-# class TenantAdmin(BaseModel):
+
+class TenantAdmin(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.tenant_admin
 
 
 class TenantCreate(BaseModel):
@@ -18,6 +24,7 @@ class TenantCreate(BaseModel):
     logo_url: Optional[str] = None
     is_Verified: Optional[bool] = False
     website: Optional[str] = None
+    admin: TenantAdmin
 
 
 class TenantListOut(BaseModel):

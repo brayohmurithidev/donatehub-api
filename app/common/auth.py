@@ -1,9 +1,9 @@
 from datetime import timedelta, datetime
 
-from fastapi import HTTPException, status
 from jose import jwt, ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 
+from app.common.handle_error import handle_error
 from app.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -31,16 +31,14 @@ def decode_access_token(token: str):
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        handle_error(401, "Token expired", )
+        # raise HTTPException(
+        #     status_code=status.HTTP_401_UNAUTHORIZED,
+        #     detail="Token expired",
+        #     headers={"WWW-Authenticate": "Bearer"},
+        # )
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-        )
+        handle_error(401, "Invalid token", )
 
 
 def create_refresh_token(data: dict):
@@ -54,8 +52,9 @@ def verify_refresh_token(token: str):
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        handle_error(401, "Invalid refresh token", )
+        # raise HTTPException(
+        #     status_code=status.HTTP_401_UNAUTHORIZED,
+        #     detail="Invalid refresh token",
+        #     headers={"WWW-Authenticate": "Bearer"},
+        # )

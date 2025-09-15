@@ -1,0 +1,5 @@
+Will watch for changes in these directories: ['/Users/fazitech/dev/getting_back/NGO-DONATIONS-PLATFORM/donatehub-api']
+Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Started reloader process [16107] using WatchFiles
+{"status_code": 500, "error_message": "An error occurred while creating the organization. Please try again later:", "exc_info": "IntegrityError('(psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint \"ix_users_email\"\\nDETAIL:  Key (email)=(glory@tenant1.com) already exists.\\n')", "event": "Application error", "user_id": null, "request_id": "943f67a9-577b-4c8b-bf52-e4237973506d", "timestamp": "2025-09-15T09:21:14.465285Z", "level": "error"}
+{"method": "POST", "path": "/api/v2/tenants/", "status_code": 500, "duration": 0.489, "client": "127.0.0.1", "event": "HTTP Request", "user_id": null, "request_id": "943f67a9-577b-4c8b-bf52-e4237973506d", "timestamp": "2025-09-15T09:21:14.466065Z", "level": "info"}

@@ -1,10 +1,11 @@
 import uuid
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_tenant_admin
+from app.common.handle_error import handle_error
 from app.common.upload import upload_image
 from app.common.utils.serialize_campaign import serialize_campaign
 from app.db.index import get_db
@@ -26,7 +27,7 @@ def get_campaigns(db: Session = Depends(get_db)):
     campaigns = fetch_campaigns(db=db)
 
     if not campaigns:
-        raise HTTPException(status_code=404, detail="No campaigns found")
+        handle_error(404, "No campaigns found")
 
     results = []
 
@@ -42,7 +43,7 @@ def get_campaign(campaign_id: UUID, db: Session = Depends(get_db)):
     campaign = fetch_campaign(db, campaign_id)
 
     if not campaign:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        handle_error(404, "Campaign not found")
 
     return campaign
 
@@ -63,15 +64,15 @@ def create_campaign(
 ):
     image, *others = body
     if image is None:
-        raise HTTPException(status_code=400, detail="Campaign Image file is required")
+        handle_error(400, "Campaign Image file is required")
 
     user, tenant = auth
     if not tenant:
-        raise HTTPException(status_code=404, detail="No tenant found for this auth")
+        handle_error(404, "No tenant found for this user")
 
     campaign = fetch_campaign_by_title(db, body.title)
     if campaign:
-        raise HTTPException(status_code=400, detail="Campaign with this title already exists")
+        handle_error(400, "Campaign with this title already exists")
 
     campaign_id = uuid.uuid4()
 
@@ -94,10 +95,10 @@ def update_campaign(
     user, tenant = auth
     campaign = fetch_campaign(db, campaign_id)
     if not campaign:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        handle_error(404, "Campaign not found")
 
     if campaign.tenant_id != tenant.id:
-        raise HTTPException(status_code=403, detail="You can only edit your own campaign")
+        handle_error(403, "You can only edit your own campaign")
 
     updated_campaign = update_campaign_data(db, campaign_id, body.model_dump())
 
@@ -113,10 +114,10 @@ def delete_campaign(
     user, tenant = auth
     campaign = fetch_campaign(db, campaign_id)
     if not campaign:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        handle_error(404, "Campaign not found")
 
     if campaign.tenant_id != tenant.id:
-        raise HTTPException(status_code=403, detail="You can only delete your own campaign")
+        handle_error(403, "You can only delete your own campaign")
 
     db.delete(campaign)
     db.commit()
