@@ -4606,3 +4606,20 @@ HTTP Request: POST http://testserver/api/v2/auth/login "HTTP/1.1 401 Unauthorize
 HTTP Request: POST http://testserver/api/v2/auth/refresh "HTTP/1.1 401 Unauthorized"
 11 changes detected
 3 changes detected
+27 changes detected
+44 changes detected
+4 changes detected
+1 change detected
+WatchFiles detected changes in 'alembic/versions/7a1b2c3d4e55_rename_donations_to_campaign_donations.py'. Reloading...
+1 change detected
+WatchFiles detected changes in 'alembic/versions/7a1b2c3d4e55_rename_donations_to_campaign_donations.py'. Reloading...
+1 change detected
+WatchFiles detected changes in 'alembic/versions/7a1b2c3d4e55_rename_donations_to_campaign_donations.py'. Reloading...
+1 change detected
+WatchFiles detected changes in 'alembic/versions/7a1b2c3d4e55_rename_donations_to_campaign_donations.py'. Reloading...
+1 change detected
+WatchFiles detected changes in 'alembic/versions/7a1b2c3d4e55_rename_donations_to_campaign_donations.py'. Reloading...
+3 changes detected
+3 changes detected
+4 changes detected
+WatchFiles detected changes in 'alembic/versions/4d04a5176e4c_merge_heads.py'. Reloading...
