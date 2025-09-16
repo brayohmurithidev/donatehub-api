@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.common.deps import require_tenant_admin
 from app.common.handle_error import handle_error
 from app.common.upload import upload_image
-from app.common.utils.serialize_campaign import serialize_campaign
+from app.features.campaign.serializers import serialize_campaign
 from app.db.index import get_db
 from app.features.campaign.schemas import CampaignOut, CampaignCreate, CampaignUpdate
 from app.features.campaign.services import fetch_campaigns, fetch_campaign, fetch_campaign_by_title, \

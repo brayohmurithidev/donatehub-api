@@ -31,7 +31,8 @@ def serialize_campaign(campaign: Campaign, db: Session) -> CampaignOut:
         tenant=TenantInCampaign(
             id=campaign.tenant.id,
             name=campaign.tenant.name,
-            # website=campaign.tenant.website,
             logo_url=campaign.tenant.logo_url,
         )
     )
+
+
