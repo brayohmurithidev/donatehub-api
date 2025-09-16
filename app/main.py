@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
-from app.api.deps import get_current_user
-from app.api.routes import index as app_routes
-from app.db.models.user import User
+from app import routes as v2_routes
+from app.common.deps import get_current_user
+from app.features.auth.models import User
+from app.middlewares.logging_middleware import logging_middleware
 
 load_dotenv()
 
@@ -23,11 +24,12 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:8000",
     "http://localhost:5173",
-    "https://donatehub-tenant.vercel.app"
+    "https://donatehub-tenant.vercel.app",
     "https://staging.donatehub-tenant.fazilabs.com",
-    "https://donatehub-tenant.fazilabs.com"
+    "https://donatehub-tenant.fazilabs.com",
     "https://donatehub.fazilabs.com",
     "https://staging.donatehub.fazilabs.com"
 ]
@@ -40,6 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.middleware("http")(logging_middleware)
+
 
 @app.get("/")
 def root():
@@ -51,7 +55,7 @@ def get_profile(user: User = Depends(get_current_user)):
     return user
 
 
-app.include_router(app_routes.router, prefix="/api/v1")
+app.include_router(v2_routes.router, prefix="/api/v2")
 
 
 @app.exception_handler(IntegrityError)
