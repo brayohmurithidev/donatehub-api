@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+import json
 from app.common.deps import require_tenant_admin
 from app.common.handle_error import handle_error
 from app.common.upload import upload_image, upload_documents
@@ -12,6 +13,7 @@ from app.features.tenant.serializers import map_tenant_to_response_model
 from app.db.index import get_db
 from app.features.tenant.models import TenantSupportDocuments
 from app.features.tenant.schemas import TenantCreate, TenantUpdate
+from app.common.redis import get_redis
 from app.features.tenant.services import get_all_tenants, get_tenant_by_id, create_new_tenant, update_tenant_data, \
     get_campaigns_by_tenant_id, get_documents_by_tenant_id
 from app.logger import logger
@@ -34,6 +36,14 @@ def get_tenants(
         page: int = Query(1, ge=1, description="Page number"),
         limit: int = Query(10, ge=1, le=200, description="Number of results per page")
 ):
+    redis = get_redis()
+    cache_key = None
+    if redis:
+        cache_key = f"tenants:list:v1:verified={verified}:search={search}:page={page}:limit={limit}"
+        cached = redis.get(cache_key)
+        if cached:
+            return json.loads(cached)
+
     tenants, total_count = get_all_tenants(db, verified, search, page, limit)
 
     if not tenants:
@@ -44,8 +54,9 @@ def get_tenants(
         tenants
     ]
     logger.info("Fetched tenants")
-    return {
-        "tenants": results,
+    # Ensure JSON-serializable response for caching
+    response = {
+        "tenants": [r.model_dump() for r in results],
         "pagination": {
             "page": page,
             "limit": limit,
@@ -53,6 +64,12 @@ def get_tenants(
             "pages": (total_count // limit) + (1 if total_count % limit > 0 else 0)
         }
     }
+    if redis and cache_key:
+        try:
+            redis.setex(cache_key, 60, json.dumps(response))
+        except Exception:
+            pass
+    return response
 
 
 # Get tenant documents
@@ -125,6 +142,14 @@ def create_tenant(
 ):
     req_body = payload.model_dump()
     new_tenant = create_new_tenant(db, req_body)
+    # Bust cached tenants lists
+    try:
+        redis = get_redis()
+        if redis:
+            for key in redis.scan_iter("tenants:list:v1:*"):
+                redis.delete(key)
+    except Exception:
+        pass
     return map_tenant_to_response_model(new_tenant, 0, 0)
 
 
@@ -146,6 +171,13 @@ def update_tenant(
     req_body = payload.model_dump(exclude_unset=True)
     print("Request body: ", req_body)
     new_tenant = update_tenant_data(db, tenant.id, req_body)
+    try:
+        redis = get_redis()
+        if redis:
+            for key in redis.scan_iter("tenants:list:v1:*"):
+                redis.delete(key)
+    except Exception:
+        pass
     return map_tenant_to_response_model(new_tenant, 0, 0)
 
 
@@ -169,10 +201,18 @@ def update_tenant_logo(
         db.commit()
         db.refresh(tenant)
 
-        return {
+        response = {
             "message": "Logo updated successfully",
             "tenant": map_tenant_to_response_model(tenant, 0, 0)
         }
+        try:
+            redis = get_redis()
+            if redis:
+                for key in redis.scan_iter("tenants:list:v1:*"):
+                    redis.delete(key)
+        except Exception:
+            pass
+        return response
     except Exception as e:
         db.rollback()
         handle_error(500, "Error updating logo", e)
