@@ -2,9 +2,9 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Donation
+from app.features.donation.models import Donation
 from app.features.campaign.models import Campaign
-from app.schemas.campaign import CampaignOut, TenantInCampaign
+from app.features.campaign.schemas import CampaignOut, TenantInCampaign
 
 
 def serialize_campaign(campaign: Campaign, db: Session) -> CampaignOut:

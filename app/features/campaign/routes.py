@@ -1,10 +1,11 @@
 import uuid
+from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_tenant_admin
+from app.common.deps import require_tenant_admin
 from app.common.handle_error import handle_error
 from app.common.upload import upload_image
 from app.common.utils.serialize_campaign import serialize_campaign
@@ -22,19 +23,14 @@ Public routes:
 """
 
 
-@router.get("/", response_model=CampaignOut)
+@router.get("/", response_model=List[CampaignOut])
 def get_campaigns(db: Session = Depends(get_db)):
     campaigns = fetch_campaigns(db=db)
 
     if not campaigns:
         handle_error(404, "No campaigns found")
 
-    results = []
-
-    for campaign in campaigns:
-        results.append(serialize_campaign(campaign, db=db))
-
-    return results
+    return [serialize_campaign(campaign, db) for campaign in campaigns]
 
 
 # Get Campaign By ID
@@ -45,7 +41,7 @@ def get_campaign(campaign_id: UUID, db: Session = Depends(get_db)):
     if not campaign:
         handle_error(404, "Campaign not found")
 
-    return campaign
+    return serialize_campaign(campaign, db)
 
 
 """
@@ -100,9 +96,36 @@ def update_campaign(
     if campaign.tenant_id != tenant.id:
         handle_error(403, "You can only edit your own campaign")
 
-    updated_campaign = update_campaign_data(db, campaign_id, body.model_dump())
+    updated_campaign = update_campaign_data(db, campaign_id, body.model_dump(exclude_unset=True))
 
     return serialize_campaign(updated_campaign, db)
+
+
+# Update campaign image
+@router.put("/{campaign_id}/image", response_model=dict)
+def update_campaign_image(
+        campaign_id: UUID,
+        image: UploadFile = File(..., description="Campaign Image file"),
+        db: Session = Depends(get_db),
+        auth=Depends(require_tenant_admin)
+):
+    if image is None:
+        handle_error(400, "Campaign Image file is required")
+    user, tenant = auth
+    campaign = fetch_campaign(db, campaign_id)
+    if not campaign:
+        handle_error(404, "Campaign not found")
+    if campaign.tenant_id != tenant.id:
+        handle_error(403, "You can only edit your own campaign")
+    try:
+        image_url = upload_image(image, "campaigns", public_id=campaign_id)
+        campaign.image_url = image_url
+        db.commit()
+        db.refresh(campaign)
+        return {"message": "Campaign image updated successfully", "campaign": serialize_campaign(campaign, db)}
+    except Exception as e:
+        db.rollback()
+        handle_error(500, "Error updating campaign image", e)
 
 
 @router.delete("/{campaign_id}", response_model=dict)

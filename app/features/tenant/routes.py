@@ -1,14 +1,19 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.common.deps import require_tenant_admin
 from app.common.handle_error import handle_error
-from app.common.utils.map_tenant_to_response_model import map_tenant_to_response_model
+from app.common.upload import upload_image, upload_documents
+from app.features.tenant.serializers import map_tenant_to_response_model
 from app.db.index import get_db
-from app.features.tenant.schemas import TenantCreate
-from app.features.tenant.services import get_all_tenants, get_tenant_by_id, create_new_tenant
+from app.features.tenant.models import TenantSupportDocuments
+from app.features.tenant.schemas import TenantCreate, TenantUpdate
+from app.features.tenant.services import get_all_tenants, get_tenant_by_id, create_new_tenant, update_tenant_data, \
+    get_campaigns_by_tenant_id, get_documents_by_tenant_id
 from app.logger import logger
 
 router = APIRouter()
@@ -18,15 +23,6 @@ Public routes:
 1. Get all tenants
 2. Get tenant by ID
 3. Register tenant
-4. Verify tenant
-5. Unverify tenant
-6. Get tenant contact info
-7. Update tenant contact info
-8. Get tenant logo
-9. Update tenant logo
-10. Get tenant description
-11. Update tenant description
-12. Get tenant location
 """
 
 
@@ -59,6 +55,28 @@ def get_tenants(
     }
 
 
+# Get tenant documents
+@router.get("/documents")
+def get_tenant_documents(
+        db: Session = Depends(get_db),
+        auth=Depends(require_tenant_admin)
+):
+    user, tenant = auth
+
+    if not tenant:
+        handle_error(403, "You need to be a tenant admin to view documents")
+
+    try:
+        documents = get_documents_by_tenant_id(db, tenant.id)
+        if not documents:
+            handle_error(404, "No documents found")
+        return documents
+
+    except Exception as e:
+        logger.error(e)
+        handle_error(500, "Error fetching documents", e)
+
+
 @router.get("/{tenant_id}")
 def get_tenant(
         tenant_id: UUID,
@@ -71,12 +89,159 @@ def get_tenant(
     return map_tenant_to_response_model(tenant, total_campaigns, total_raised)
 
 
+# Get tenant campaigns
+@router.get("/{tenant_id}/campaigns")
+def get_tenant_campaigns(
+        tenant_id: UUID,
+        search: Optional[str] = Query(None, description="Filter by campaign name"),
+        page: int = Query(1, ge=1, description="Page number"),
+        limit: int = Query(10, ge=1, le=200, description="Number of results per page"),
+        db: Session = Depends(get_db)
+):
+    tenant = get_tenant_by_id(db, tenant_id=tenant_id)
+    if not tenant:
+        handle_error(404, "Tenant not found")
+    try:
+        campaigns, total_count = get_campaigns_by_tenant_id(db, tenant_id, search, page, limit)
+        return {
+            "campaigns": campaigns,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_count,
+                "pages": (total_count // limit) + (1 if total_count % limit > 0 else 0)
+            }
+        }
+    except Exception as e:
+        logger.error(e)
+        handle_error(500, "Error fetching campaigns", e)
+
+
 # REGISTER NEW TENANT
 @router.post("/")
-def creat_tenant(
+def create_tenant(
         payload: TenantCreate,
         db: Session = Depends(get_db)
 ):
     req_body = payload.model_dump()
     new_tenant = create_new_tenant(db, req_body)
     return map_tenant_to_response_model(new_tenant, 0, 0)
+
+
+"""
+Protected routes:
+1. Update Tenant
+"""
+
+
+@router.put("/update")
+def update_tenant(
+        payload: TenantUpdate,
+        db: Session = Depends(get_db),
+        auth=Depends(require_tenant_admin)
+):
+    user, tenant = auth
+    if not tenant:
+        handle_error(403, "You need to be a tenant admin to update a tenant")
+    req_body = payload.model_dump(exclude_unset=True)
+    print("Request body: ", req_body)
+    new_tenant = update_tenant_data(db, tenant.id, req_body)
+    return map_tenant_to_response_model(new_tenant, 0, 0)
+
+
+@router.put("/update/logo")
+def update_tenant_logo(
+        logo: UploadFile = File(..., description="Logo file"),
+        db: Session = Depends(get_db),
+        auth=Depends(require_tenant_admin)
+):
+    user, tenant = auth
+    if not tenant:
+        handle_error(403, "You need to be a tenant admin to update a tenant")
+    if not logo:
+        handle_error(400, "Logo file is required")
+
+    try:
+
+        logo_url = upload_image(logo, "tenant_logos", public_id=tenant.id)
+
+        tenant.logo_url = logo_url
+        db.commit()
+        db.refresh(tenant)
+
+        return {
+            "message": "Logo updated successfully",
+            "tenant": map_tenant_to_response_model(tenant, 0, 0)
+        }
+    except Exception as e:
+        db.rollback()
+        handle_error(500, "Error updating logo", e)
+
+
+# Upload Validation Documents
+@router.post("/update/validation_documents")
+def update_tenant_validation_documents(
+        registration: Optional[UploadFile] = File(None, description="Registration Document"),
+        tax_certificate: Optional[UploadFile] = File(None, description="Tax Certificate"),
+        governance_document: Optional[UploadFile] = File(None, description="Board Resolution / Governance structure"),
+        identification: Optional[UploadFile] = File(None, description="Director/ Trustee ID"),
+        bank: Optional[UploadFile] = File(None, description="Bank Verification Document"),
+        financial_report: Optional[UploadFile] = File(None, description="Audited Financial Statements"),
+        report: Optional[UploadFile] = File(None, description="Annual / Impact Report"),
+        db: Session = Depends(get_db),
+        auth=Depends(require_tenant_admin)
+):
+    user, tenant = auth
+    uploaded_files = {
+        "registration": registration,
+        "tax_certificate": tax_certificate,
+        "governance_document": governance_document,
+        "identification": identification,
+        "bank": bank,
+        "financial_report": financial_report,
+        "report": report
+    }
+
+    results = {}
+
+    # result = upload_support_documents(db, tenant.id, uploaded_files)
+    for key, file in uploaded_files.items():
+        if file is None:
+            continue
+        try:
+            file_ext = file.filename.split(".")[-1].lower()
+            base_id = f"{key}_{tenant.id}"
+            file_url = upload_documents(file, "tenant_support_documents", f"{key}_{tenant.id}")
+
+            # Check if a document already exists
+            existing_document = (db.query(TenantSupportDocuments).filter(TenantSupportDocuments.tenant_id == tenant.id,
+                                                                         TenantSupportDocuments.document_base_id == base_id).first())
+
+            if existing_document:
+                existing_document.document_url = file_url
+                existing_document.document_type = file_ext
+                db.commit()
+                db.refresh(existing_document)
+                results[key] = {"status": "success", "url": file_url}
+            else:
+                document = TenantSupportDocuments(
+                    tenant_id=tenant.id,
+                    document_name=key,
+                    document_base_id=base_id,
+                    document_url=file_url,
+                    document_type=file_ext
+                )
+                db.add(document)
+                db.commit()
+                db.refresh(document)
+
+                results[key] = {"status": "success", "url": file_url}
+        except HTTPException as e:
+            db.rollback()
+            handle_error(400, e.detail, e)
+
+        except IntegrityError as e:
+            db.rollback()
+            handle_error(400, "Document already exists", e)
+
+    return {"tenant_id": str(tenant.id), "documents": results}

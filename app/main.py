@@ -7,8 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
 from app import routes as v2_routes
-from app.api.deps import get_current_user
-from app.api.routes import index as app_routes
+from app.common.deps import get_current_user
 from app.features.auth.models import User
 from app.middlewares.logging_middleware import logging_middleware
 
@@ -56,7 +55,6 @@ def get_profile(user: User = Depends(get_current_user)):
     return user
 
 
-app.include_router(app_routes.router, prefix="/api/v1")
 app.include_router(v2_routes.router, prefix="/api/v2")
 
 

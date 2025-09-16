@@ -3,7 +3,8 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, HttpUrl
+from fastapi import UploadFile, File
+from pydantic import BaseModel, EmailStr, Field
 
 from app.features.auth.models import UserRole
 
@@ -27,6 +28,25 @@ class TenantCreate(BaseModel):
     admin: TenantAdmin
 
 
+class TenantUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    location: Optional[str] = None
+    website: Optional[str] = Field(None, description="URL of the tenant's website")
+
+
+class TenantSupportedDocuments(BaseModel):
+    registration: Optional[UploadFile] = File(None, description="Certificate of registration")
+    tax_certificate: Optional[UploadFile] = File(None, description="Tax certificate / Exemption Certificate")
+    governance_document: Optional[UploadFile] = File(None, description="Board Resolution / Governance structure")
+    id: Optional[UploadFile] = File(None, description="Director/ Trustee ID")
+    bank: Optional[UploadFile] = File(None, description="Bank Verification Document")
+    financial_report: Optional[UploadFile] = File(None, description="Audited Financial Statements")
+    report: Optional[UploadFile] = File(None, description="Annual / Impact Report")
+
+
 class TenantListOut(BaseModel):
     id: UUID
     name: str
@@ -35,7 +55,7 @@ class TenantListOut(BaseModel):
     short_description: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    website: Optional[HttpUrl] = None
+    website: Optional[str] = None
     location: Optional[str] = None
     total_campaigns: int
     total_raised: Decimal
