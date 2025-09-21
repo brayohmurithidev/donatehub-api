@@ -24,7 +24,4 @@ def encrypt_secret(value: str) -> str:
 
 def decrypt_secret(value: str) -> str:
     decoded = fernet.decrypt(value.encode()).decode()
-    print("from decrypt -> decoded : ", decoded)
     return decoded
-
-

@@ -3,8 +3,12 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
+from app.models import Tenant
+from app.schemas import TenantListOut
+from fastapi import HTTPException, status
 from fastapi import UploadFile, File
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.orm import Session
 
 from app.features.auth.models import UserRole
 
@@ -64,3 +68,42 @@ class TenantListOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+def get_tenant_by_id(db: Session, tenant_id: UUID) -> TenantListOut:
+    """
+    Get a single tenant by its ID.
+
+    Args:
+        db (Session): Database session.
+        tenant_id (UUID): The ID of the tenant to retrieve.
+
+    Returns:
+        TenantListOut: Tenant details if found.
+
+    Raises:
+        HTTPException: If no tenant is found with the given ID.
+    """
+    tenant = db.query(
+        Tenant.id,
+        Tenant.name,
+        Tenant.logo_url,
+        Tenant.description,
+        Tenant.short_description,
+        Tenant.email,
+        Tenant.phone,
+        Tenant.website,
+        Tenant.location,
+        Tenant.total_campaigns,
+        Tenant.total_raised,
+        Tenant.is_verified,
+        Tenant.date_joined
+    ).filter(Tenant.id == tenant_id).first()
+
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant with ID {tenant_id} not found."
+        )
+
+    return TenantListOut.from_orm(tenant)

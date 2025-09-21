@@ -9,7 +9,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
       - REDIS_URL=redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@${RABBITMQ_HOST:-rabbitmq}:${RABBITMQ_PORT:-5672}/
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST:-rabbitmq}:${RABBITMQ_PORT:-5672}/
     volumes:
       - ./app:/app/app #mounting code to container code
     depends_on:
