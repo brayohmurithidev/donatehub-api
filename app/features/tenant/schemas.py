@@ -3,8 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from app.models import Tenant
-from app.schemas import TenantListOut
+from app.features.tenant.models import Tenant
 from fastapi import HTTPException, status
 from fastapi import UploadFile, File
 from pydantic import BaseModel, EmailStr, Field
