@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from pydantic import EmailStr
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -9,7 +10,7 @@ from app.features.auth.models import User
 
 
 # Find the user by email ->
-def find_user_by_email(db: Session, email: str):
+def find_user_by_email(db: Session, email: EmailStr):
     user = db.query(User).filter(User.email == email).first()
     return user
 
@@ -43,6 +44,9 @@ def create_new_user(db: Session, data):
         db.rollback()
         handle_error(500, "Unexpected error occurred while creating the user", e)
 
+
 # Signup
 
 # Reset password
+def send_user_password_reset_email(db: Session, email: str):
+    pass
