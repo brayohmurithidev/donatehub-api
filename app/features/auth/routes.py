@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
 
 from app.common.auth import check_password_match, create_access_token, create_refresh_token, verify_refresh_token
 from app.common.handle_error import handle_error
@@ -10,8 +11,19 @@ from app.db.index import get_db
 from app.features.auth.models import User
 from app.features.auth.schemas import TokenRefreshRequest, UserCreate, UserOut
 from app.features.auth.services import find_user_by_email, create_new_user
+from app.services.rabbitmq.publisher import publish_notification, RoutingKeys
 
 router = APIRouter()
+
+
+# TEST SEND EMAIL VERIFICATION
+@router.post("/test")
+async def test_auth(email: EmailStr):
+    try:
+        await publish_notification(RoutingKeys.EMAIL_VERIFICATION, {"emai": email})
+        return JSONResponse(status_code=200, content={"message": "A verification Link will be sent to your email"})
+    except Exception as e:
+        handle_error(500, "An Error occored", e)
 
 
 # Register
