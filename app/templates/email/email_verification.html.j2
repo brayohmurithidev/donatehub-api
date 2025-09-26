@@ -1,0 +1,69 @@
+{# verification_email.html.j2 - HTML part #}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width"/>
+    <title>Verify your email</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table width="600" cellpadding="0" cellspacing="0" role="presentation"
+                   style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                <!-- Header -->
+                <tr>
+                    <td style="padding:24px;background:linear-gradient(90deg,#0f4c81,#1a9ad6);color:#fff;text-align:left;">
+                        <img src="{{ logo_url | default('https://example.com/logo.png') }}"
+                             alt="{{ brand_name | default('DonateHub') }}" width="120" style="display:block;border:0;"/>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:28px 32px;color:#111;">
+                        <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;">
+                            Hi {{ user_name | default('Friend') }},</h1>
+                        <p style="margin:0 0 18px;line-height:1.5;color:#333;">
+                            Thanks for signing up for {{ brand_name | default('DonateHub') }} — we just need to verify
+                            your email address to finish creating your account.
+                        </p>
+
+                        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 22px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="{{ verification_url }}"
+                                       style="background:#1a9ad6;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:700;">
+                                        Verify email
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:0 0 8px;color:#666;line-height:1.5;">
+                            If the button doesn't work, copy and paste this link into your browser:
+                        </p>
+                        <p style="word-break:break-all;color:#0066cc;font-size:13px;">{{ verification_url }}</p>
+
+                        <hr style="border:none;border-top:1px solid #eee;margin:22px 0;"/>
+
+                        <p style="margin:0;color:#777;font-size:13px;">
+                            If you didn't create an account, you can ignore this email or <a
+                                href="mailto:{{ support_email | default('support@fazilabs.com') }}">contact support</a>.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding:16px 24px;background:#fafbfd;color:#999;font-size:12px;text-align:center;">
+                        © {{ now_year | default('2025') }} {{ brand_name | default('DonateHub') }} — Nairobi, Kenya
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

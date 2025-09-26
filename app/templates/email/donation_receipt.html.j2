@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width"/>
+    <title></title></head>
+<body style="background:#f7f8fa;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%">
+    <tr>
+        <td align="center" style="padding:24px;">
+            <table width="700" role="presentation" style="background:#fff;border-radius:8px;overflow:hidden;">
+                <tr>
+                    <td style="padding:20px 24px;border-bottom:1px solid #eee;">
+                        <img src="{{ logo_url | default('https://example.com/logo.png') }}"
+                             alt="{{ brand_name | default('DonateHub') }}" width="140"/>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:28px 32px;color:#222;">
+                        <h1 style="font-size:20px;margin:0 0 8px;">Thank you for your
+                            donation, {{ donor_name | default('Supporter') }}!</h1>
+                        <p style="margin:0 0 18px;color:#555;line-height:1.5;">
+                            We’ve received your donation — here are the details:
+                        </p>
+
+                        <table role="presentation" width="100%" style="margin:12px 0 18px;">
+                            <tr>
+                                <td style="padding:8px 0;color:#333;"><strong>Donation ID:</strong></td>
+                                <td style="padding:8px 0;color:#333;">{{ donation_id }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 0;color:#333;"><strong>Campaign:</strong></td>
+                                <td style="padding:8px 0;color:#333;">{{ campaign_name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 0;color:#333;"><strong>Amount:</strong></td>
+                                <td style="padding:8px 0;color:#333;">{{ donation_amount }} {{ currency | default('KES') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 0;color:#333;"><strong>Date:</strong></td>
+                                <td style="padding:8px 0;color:#333;">{{ date }}</td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:0 0 14px;color:#666;">
+                            A receipt has been sent to {{ donor_email }}. If you need a formal tax receipt or invoice,
+                            reply to this email or contact {{ support_email | default('support@example.com') }}.
+                        </p>
+
+                        <div style="margin-top:20px;">
+                            <a href="{{ campaign_url }}" style="text-decoration:none;font-weight:700;color:#1a9ad6;">View
+                                campaign</a>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:16px;background:#fafbfd;color:#888;font-size:12px;text-align:center;">
+                        {{ brand_name | default('DonateHub') }} — Thank you for supporting causes that matter.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
