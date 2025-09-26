@@ -2,15 +2,32 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.index import get_db
-from app.features.donation.models import Donation
 from app.features.campaign.models import Campaign
+from app.features.donation.models import Donation
 from app.features.donation.schemas import DonationOut, CreateDonation
 from app.features.payments.services import process_payment
+from app.services.rabbitmq.publisher import publish_donation_event
 
 router = APIRouter()
+
+
+# TEST DONATION
+class TestDonation(BaseModel):
+    donation_id: str
+    donor_email: str
+    amount: float
+
+
+@router.post("/test")
+async def test_donation(
+        payload: TestDonation
+):
+    await publish_donation_event(donation_id=payload.donation_id, donor_email=payload.donor_email,
+                                 amount=payload.amount)
 
 
 @router.post("/", response_model=DonationOut)
