@@ -21,9 +21,16 @@ class Settings(BaseSettings):
     MPESA_PASSKEY: str
     ENCRYPTION_SECRET_KEY: str
     RABBITMQ_URL: str
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: str
+    MAIL_SERVER: str
+    MAIL_FROM_NAME: str
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()
