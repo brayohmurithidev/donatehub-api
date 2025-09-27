@@ -1,6 +1,7 @@
 # Get tenants
 from uuid import UUID
 
+from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -70,12 +71,14 @@ def create_new_tenant(db: Session, data):
 
     except IntegrityError as e:
         db.rollback()
-        if "ix_user_email" in str(e.orig):
-            handle_error(400, "AThis user is already linked with another Organization", e)
+        if "ix_users_email" in str(e.orig):
+            handle_error(400, "This user is already linked with another Organization", e)
 
         else:
             handle_error(500, "An error occurred while creating the organization. Please try again later:", e)
-
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         # Rollback transaction
         db.rollback()
