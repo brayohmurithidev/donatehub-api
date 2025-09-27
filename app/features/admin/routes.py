@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.common.deps import require_platform_admin
 from app.db.index import get_db
+from app.features.admin.schemas import TenantOut
 from app.features.auth.models import User
 from app.features.campaign.models import Campaign, CampaignStatus
 from app.features.tenant.models import Tenant
-from app.features.admin.schemas import TenantOut
 
 router = APIRouter()
 
@@ -68,7 +68,7 @@ def get_tenants(
                 "phone": tenant_obj.phone,
                 "email": tenant_obj.email,
                 "location": tenant_obj.location,
-                "is_Verified": bool(tenant_obj.is_Verified),
+                "is_email_verified": bool(tenant_obj.is_Verified),
                 "website": tenant_obj.website,
                 "total_campaigns": int(total_campaigns or 0),
                 "active_campaigns": int(active_campaigns or 0),
@@ -150,5 +150,3 @@ def get_tenant(
     }
 
     return result
-
-
