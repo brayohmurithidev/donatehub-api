@@ -13,7 +13,7 @@ class TenantOut(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     location: Optional[str] = None
-    is_Verified: bool
+    is_email_verified: bool
     website: Optional[str] = None
 
     total_campaigns: int = 0
@@ -27,5 +27,3 @@ class TenantOut(BaseModel):
 
     class Config:
         from_attributes = True
-
-
