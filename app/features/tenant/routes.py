@@ -1,22 +1,26 @@
+import json
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
+from jose import ExpiredSignatureError, JWTError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
 
-import json
 from app.common.deps import require_tenant_admin
 from app.common.handle_error import handle_error
-from app.common.upload import upload_image, upload_documents
-from app.features.tenant.serializers import map_tenant_to_response_model
-from app.db.index import get_db
-from app.features.tenant.models import TenantSupportDocuments
-from app.features.tenant.schemas import TenantCreate, TenantUpdate
 from app.common.redis import get_redis
+from app.common.upload import upload_image, upload_documents
+from app.common.utils import generate_verification_token, generate_verification_url, verify_verification_token
+from app.db.index import get_db
+from app.features.tenant.models import TenantSupportDocuments, Tenant
+from app.features.tenant.schemas import TenantCreate, TenantUpdate
+from app.features.tenant.serializers import map_tenant_to_response_model
 from app.features.tenant.services import get_all_tenants, get_tenant_by_id, create_new_tenant, update_tenant_data, \
     get_campaigns_by_tenant_id, get_documents_by_tenant_id
 from app.logger import logger
+from app.services.rabbitmq.publisher import publish_notification, RoutingKeys
 
 router = APIRouter()
 
@@ -94,6 +98,38 @@ def get_tenant_documents(
         handle_error(500, "Error fetching documents", e)
 
 
+# VERIFY EMAIL
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    try:
+        payload = verify_verification_token(token)
+        tenant_id = payload.get("sub")
+
+        tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        if not tenant:
+            handle_error(404, "Tenant not found")
+
+        if tenant.is_email_verified:
+            handle_error(400, "Email already verified")
+
+        tenant.is_email_verified = True
+        db.commit()
+
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Email verified successfully"}
+        )
+
+    except ExpiredSignatureError as e:
+        handle_error(400, "Verification link expired", e)
+    except JWTError as e:
+        handle_error(400, "Invalid verification link", e)
+    except HTTPException:
+        raise
+    except Exception as e:
+        handle_error(500, "Unexpected server error", e)
+
+
 @router.get("/{tenant_id}")
 def get_tenant(
         tenant_id: UUID,
@@ -136,7 +172,7 @@ def get_tenant_campaigns(
 
 # REGISTER NEW TENANT
 @router.post("/")
-def create_tenant(
+async def create_tenant(
         payload: TenantCreate,
         db: Session = Depends(get_db)
 ):
@@ -150,7 +186,30 @@ def create_tenant(
                 redis.delete(key)
     except Exception:
         pass
+
+    token = generate_verification_token(str(new_tenant.id))
+    verification_url = generate_verification_url(token)
+
+    payload = {
+        "email": new_tenant.email,
+        "tenant_id": str(new_tenant.id),
+        "name": new_tenant.name,
+        "verification_url": verification_url,
+        "logo_url": new_tenant.logo_url
+    }
+    # Publish email verification Message
+    try:
+        await publish_notification(
+            RoutingKeys.EMAIL_VERIFICATION,
+            payload
+        )
+    except Exception as e:
+        logger.info(f"Failed to enqueue verification email: {e}")
+
     return map_tenant_to_response_model(new_tenant, 0, 0)
+
+
+# Verify Email
 
 
 """
