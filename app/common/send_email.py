@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi_mail import MessageSchema, MessageType, FastMail, ConnectionConfig
 from pydantic import BaseModel, EmailStr
 
@@ -51,24 +53,24 @@ async def send_mail(email: EmailStr, data: SendEmailSchema):
         return {"status": "failed", "recipient": email, "error": str(e)}
 
 
-async def send_verification_email(email: EmailStr):
+async def send_verification_email(email: EmailStr, payload: dict):
     # Generate verification url
-    url = "http://fazilabs.com"
+    url = payload.get("verification_url", "http://fazilabs.com")
     context = {
         "user": {
-            "name": "Brian Murithi"
+            "name": payload.get("name", "User")
         },
         "verification_url": url,
-        "logo_url": "",
+        "logo_url": payload.get("logo_url", ""),
         "brand_name": "Donate Hub",
         "support_email": "support@fazilabs.com",
-        "now_year": 2025
+        "now_year": datetime.now().year
     }
 
     data = SendEmailSchema(
         context=context,
         template="email/email_verification",
-        subject="Verification Email"
+        subject="Verify your email address"
     )
 
     result = await send_mail(email, data)
