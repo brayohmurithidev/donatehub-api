@@ -1,3 +1,4 @@
+from pydantic import HttpUrl
 from pydantic_settings import BaseSettings
 
 
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     MAIL_PORT: str
     MAIL_SERVER: str
     MAIL_FROM_NAME: str
+    FRONTEND_URL: HttpUrl
 
     class Config:
         env_file = ".env"
