@@ -14,8 +14,6 @@ def map_tenant_to_response_model(tenant, total_campaigns, total_raised) -> Tenan
         location=tenant.location,
         total_campaigns=total_campaigns,
         total_raised=round(total_raised, 2),
-        is_verified=tenant.is_Verified,
+        is_email_verified=tenant.is_email_verified,
         date_joined=tenant.created_at,
     )
-
-
