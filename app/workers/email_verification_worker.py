@@ -65,7 +65,7 @@ async def email_verification_worker(channel: Channel):
                     email = payload["email"]
 
                     logger.info(f"Processing verification email for {email}")
-                    res = await send_verification_email(email)
+                    res = await send_verification_email(email, payload)
 
                     if not res:
                         raise Exception("Email send failed")
@@ -73,11 +73,9 @@ async def email_verification_worker(channel: Channel):
                     logger.info(f"Email sent successfully: {res}")
 
                 except Exception as e:
-                    retries = message.headers.get("x-retry", 0)
-                    logger.error(f"Error handling email.verification (retry={retries}): {e}")
+                    retries = (message.headers or {}).get("x-retry", 0)
 
                     if retries >= MAX_RETRIES:
-                        # send permanently to DLQ
                         await dlx.publish(
                             aio_pika.Message(
                                 body=message.body,
@@ -85,9 +83,8 @@ async def email_verification_worker(channel: Channel):
                             ),
                             routing_key=RoutingKeys.EMAIL_VERIFICATION.value
                         )
-                        logger.warning(f"Message moved to DLQ after {MAX_RETRIES} retries: {message.body}")
+                        logger.warning(f"Moved to DLQ after {MAX_RETRIES} retries: {message.body}")
                     else:
-                        # publish to retry queue
                         await exchange.publish(
                             aio_pika.Message(
                                 body=message.body,
@@ -96,6 +93,6 @@ async def email_verification_worker(channel: Channel):
                             ),
                             routing_key=RETRY_QUEUE
                         )
-                        logger.info(f"Message sent to retry queue (retry={retries + 1})")
+                        logger.info(f"Sent to retry queue (retry={retries + 1})")
 
                     await message.ack()
