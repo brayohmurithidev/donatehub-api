@@ -1,11 +1,18 @@
+import enum
 import uuid
 
-from sqlalchemy import Column, String, Text, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Text, Boolean, ForeignKey, UniqueConstraint, Enum
 from sqlalchemy.dialects.postgresql.base import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.index import Base
 from app.db.model_base import TimestampMixin
+
+
+class DocumentVerificationStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class Tenant(Base, TimestampMixin):
@@ -18,7 +25,13 @@ class Tenant(Base, TimestampMixin):
     phone = Column(String, nullable=True)
     email = Column(String, nullable=True)
     location = Column(String, nullable=True)
-    is_Verified = Column(Boolean, default=False)
+    is_email_verified = Column(Boolean, default=False)
+    document_verification_status = Column(
+        Enum(DocumentVerificationStatus),
+        default=DocumentVerificationStatus.PENDING,
+        nullable=False,
+    )
+    document_verification_notes = Column(Text, nullable=True)
     website = Column(String, nullable=True, unique=True)
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
