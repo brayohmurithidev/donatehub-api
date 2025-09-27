@@ -3,13 +3,13 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from app.features.tenant.models import Tenant
 from fastapi import HTTPException, status
 from fastapi import UploadFile, File
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.features.auth.models import UserRole
+from app.features.tenant.models import Tenant
 
 
 class TenantAdmin(BaseModel):
@@ -26,7 +26,7 @@ class TenantCreate(BaseModel):
     email: Optional[EmailStr] = None
     location: Optional[str] = None
     logo_url: Optional[str] = None
-    is_Verified: Optional[bool] = False
+    is_email_verified: Optional[bool] = False
     website: Optional[str] = None
     admin: TenantAdmin
 
@@ -62,7 +62,7 @@ class TenantListOut(BaseModel):
     location: Optional[str] = None
     total_campaigns: int
     total_raised: Decimal
-    is_verified: bool
+    is_email_verified: bool
     date_joined: datetime
 
     class Config:
